@@ -1,0 +1,11 @@
+[package]
+name = "loader"
+version = "0.1.0"
+authors = ["orumin <dev@orum.in>"]
+
+[lib]
+path = "loader.rs"
+create-type = ["staticlib"]
+
+[dependencies]
+uefi = "0.1.2"
