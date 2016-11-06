@@ -1,11 +1,18 @@
 [package]
-name = "loader"
+name = "uefi_loader"
 version = "0.1.0"
 authors = ["orumin <dev@orum.in>"]
 
 [lib]
 path = "loader.rs"
-create-type = ["staticlib"]
+crate-type = ["staticlib"]
 
 [dependencies]
-uefi = "0.1.2"
+rlibc = "1.0"
+uefi  = "0.1.2"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

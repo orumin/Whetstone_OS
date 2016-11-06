@@ -1,0 +1,6 @@
+[package]
+name = "whetstone"
+version = "0.1.0"
+authors = ["orumin <dev@orum.in>"]
+
+[dependencies]
