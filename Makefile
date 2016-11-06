@@ -9,7 +9,7 @@ LIBCORE		= $(LIBCORE_DIR)/libcore.rlib
 LIBUEFI_DIR	= external/uefi/target/$(TARGET)/debug/
 LIBUEFI		= $(LIBUEFI_DIR)/libuefi.rlib
 LOADER		= loader/target/$(TARGET)/debug/libuefi_loader.a
-#KERNEL_OBJ	= target/$(TARGET)/debug/libwhetstone.a
+KERNEL_OBJ	= target/$(TARGET)/debug/libwhetstone.a
 
 FORMAT		= efi-app-$(ARCH)
 LDFLAGS		= --oformat pei-x86-64 --subsystem 10 -pie -e efi_main
@@ -41,12 +41,12 @@ $(LOADER): $(LIBCORE) $(LIBUEFI)
 	RUSTFLAGS='-L $(LIBUEFI_DIR) -L $(LIBCORE_DIR)' $(CARGO) build --manifest-path=loader/Cargo.toml --target $(TARGET)
 	cd loader/target/$(TARGET)/debug && $(AR) x libuefi_loader.a
 
-$(BUILD_ROOT)/$(KERNEL): cargo $(LOADER) $(KERNEL_OBJ)
+$(BUILD_ROOT)/$(KERNEL): $(KERNEL_OBJ) $(LOADER) $(KERNEL_OBJ)
 	@mkdir -p $(BUILD_ROOT)
-	$(LD) $(LDFLAGS) -o $@ $(dir $(LOADER))*.o $(KERNEL_OBJ)
+	$(LD) $(LDFLAGS) -o $@ $(dir $(LOADER))*.o #$(KERNEL_OBJ)
 
-cargo:
-#	$(CARGO) build --target $(TARGET)
+$(KERNEL_OBJ): $(LOADER)
+	RUSTFLAGS='-L $(LIBUEFI_DIR) -L $(LIBCORE_DIR)' $(CARGO) build --target $(TARGET)
 
 iso: $(BUILD_ROOT)/$(ISO)
 
@@ -62,5 +62,5 @@ clean:
 	@cd loader && $(CARGO) clean && rm -rf target
 	@cd external/core && $(CARGO) clean && rm -rf target
 	@cd external/uefi && $(CARGO) clean && rm -rf target
-#	@$(CARGO) clean
+	@$(CARGO) clean
 	@rm -rf build

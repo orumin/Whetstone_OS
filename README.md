@@ -1,6 +1,8 @@
 Whetstone OS
 ============
 
+[![Build Status](https://travis-ci.org/orumin/Whetstone_OS.svg?branch=master)](https://travis-ci.org/orumin/Whetstone_OS)
+
 What's this?
 ------------
 
