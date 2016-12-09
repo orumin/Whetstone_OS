@@ -10,8 +10,9 @@ before_script:
   - rustup component add rust-src
   - (test -x $HOME/.cargo/bin/xargo || cargo install xargo)
   - (test -x x86_64-efi-pe-binutils.tar.xz || curl -O https://orum.in/distfiles/x86_64-efi-pe-binutils.tar.xz)
-  - (test -d $HOME/bin || mkdir $HOME/bin)
-  - (test -x $HOME/bin/usr/bin/x86_64-efi-pe-ld || tar xf x86_64-efi-pe-binutils.tar.xz -C $HOME/bin)
+  - (test -d $PWD/toolchain || mkdir $PWD/toolchain)
+  - (test -x $PWD/toolchain/usr/bin/x86_64-efi-pe-ld || tar xf x86_64-efi-pe-binutils.tar.xz -C $PWD/toolchain)
+  - export PATH=$PATH:$PWD/toolchain/usr/bin/
 
 sudo: false
 
@@ -20,4 +21,4 @@ addons:
     packages:
       - nasm
 
-script: bash scripts/travis.sh
+script: make

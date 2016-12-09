@@ -3,7 +3,11 @@ name = "whetstone"
 version = "0.1.0"
 authors = ["orumin <dev@orum.in>"]
 
-[dependencies]
+[dependencies.uefi_loader]
+path = "loader"
+
+[dependencies.uefi]
+path = "external/uefi"
 
 [lib]
 crate-type = ["staticlib"]
