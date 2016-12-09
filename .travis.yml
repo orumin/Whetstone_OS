@@ -1,3 +1,23 @@
 language: rust
 rust:
   - nightly
+
+cache: cargo
+
+before_script:
+  - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=$TRAVIS_RUST_VERSION -y
+  - . ~/.cargo/env
+  - rustup component add rust-src
+  - (test -x $HOME/.cargo/bin/xargo || cargo install xargo)
+  - (test -x x86_64-efi-pe-binutils.tar.xz || curl -O https://orum.in/distfiles/x86_64-efi-pe-binutils.tar.xz)
+  - (test -d $HOME/bin || mkdir $HOME/bin)
+  - (test -x $HOME/bin/usr/bin/x86_64-efi-pe-ld || tar xf x86_64-efi-pe-binutils.tar.xz -C $HOME/bin)
+
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - nasm
+
+script: bash scripts/travis.sh

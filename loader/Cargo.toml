@@ -9,7 +9,9 @@ crate-type = ["staticlib"]
 
 [dependencies]
 rlibc = "1.0"
-uefi  = "0.1.2"
+
+[dependencies.uefi]
+path = "../external/uefi"
 
 [profile.dev]
 panic = "abort"
