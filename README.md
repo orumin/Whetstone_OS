@@ -18,6 +18,8 @@ How to build
 ```sh
 $ rustup install nightly
 $ rustup default nightly
+$ cargo install xargo
+$ export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
 Then, only you run `make` on root directory.
