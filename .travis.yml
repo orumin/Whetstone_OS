@@ -20,5 +20,6 @@ addons:
   apt:
     packages:
       - nasm
+      - mtools
 
-script: make
+script: make img
