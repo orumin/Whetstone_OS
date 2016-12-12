@@ -15,17 +15,24 @@ use uefi::SimpleTextOutput;
 #[allow(unreachable_code)]
 #[no_mangle]
 pub extern "win64" fn efi_main(hdl: uefi::Handle, sys: uefi::SystemTable) -> uefi::Status {
-    uefi::initialize_lib(&hdl, &sys);
+//    FIXME: handle_protocol() ( called by initialize_lib() ) is always hang up now
+//    uefi::initialize_lib(&hdl, &sys);
+    uefi::set_system_table(&sys);
+
+    let bs = uefi::get_system_table().boot_services();
+    let rs = uefi::get_system_table().runtime_services();
+
     uefi::get_system_table().console().write("Hello, World!\n\r");
 
-    let mut memory_map_size: usize = 0;
-    let mut map_key: usize = 0;
-    let mut descriptor_size: usize = 0;
-    let mut descriptor_version: u32 = 0;
+    let (memory_map, memory_map_size, map_key, descriptor_size, descriptor_version) = uefi::lib_memory_map();
 
-    let memory_map = uefi::lib_memory_map(&mut memory_map_size, &mut map_key, &mut descriptor_size, &mut descriptor_version);
+    bs.exit_boot_services(&hdl, &map_key);
+    rs.set_virtual_address_map(&memory_map_size, &descriptor_size, &descriptor_version, memory_map);
 
-    loop {}
+    rs.reset_system(uefi::ResetType::Shutdown, uefi::Status::Success);
+
+    loop {
+    }
     uefi::Status::Success
 }
 
@@ -51,6 +58,8 @@ pub extern fn rust_eh_personality() {}
 
 #[lang = "panic_fmt"]
 #[no_mangle]
-pub extern fn panic_fmt(_msg: core::fmt::Arguments, _file: &'static str, _line: u32) -> ! {
+pub extern fn rust_begin_panic(_msg: core::fmt::Arguments,
+                               _file: &'static str,
+                               _line: u32) -> ! {
     loop {}
 }

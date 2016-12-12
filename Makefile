@@ -4,10 +4,6 @@ BUILD_ROOT	= build
 KERNEL		= bootx64.efi
 ISO			= boot.iso
 
-LIBCORE_DIR	= external/core/target/$(TARGET)/debug/
-LIBCORE		= $(LIBCORE_DIR)/libcore.rlib
-LIBUEFI_DIR	= external/uefi/target/$(TARGET)/debug/
-LIBUEFI		= $(LIBUEFI_DIR)/libuefi.rlib
 LOADER		= loader/target/$(TARGET)/debug/libuefi_loader.a
 KERNEL_OBJ	= target/$(TARGET)/debug/libwhetstone.a
 
@@ -27,6 +23,7 @@ RUSTC		= rustc
 CARGO		= xargo
 
 LOADER_SRC	= $(wildcard loader/*.rs)
+LIBUEFI_SRC = $(wildcard external/uefi/src/*.rs)
 
 BUILD_TARGET = $(BUILD_ROOT)/$(KERNEL)
 
@@ -34,7 +31,7 @@ BUILD_TARGET = $(BUILD_ROOT)/$(KERNEL)
 
 all: $(BUILD_TARGET)
 
-$(LOADER): $(LOADER_SRC)
+$(LOADER): $(LOADER_SRC) $(LIBUEFI_SRC)
 	$(CARGO) build --manifest-path=loader/Cargo.toml --target $(TARGET)
 	cd loader/target/$(TARGET)/debug && $(AR) x libuefi_loader.a
 
@@ -57,7 +54,5 @@ run: iso
 
 clean:
 	@cd loader && $(CARGO) clean && rm -rf target
-#	@cd external/core && $(CARGO) clean && rm -rf target
-#	@cd external/uefi && $(CARGO) clean && rm -rf target
 	@$(CARGO) clean
 	@rm -rf build
