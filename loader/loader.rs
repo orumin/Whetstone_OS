@@ -2,10 +2,6 @@
 #![feature(asm)]
 #![feature(intrinsics)]
 #![feature(lang_items)]
-#[allow(dead_code)]
-#[allow(non_snake_case)]
-#[allow(non_camel_case_types)]
-#[allow(missing_copy_implementations)]
 
 extern crate uefi;
 extern crate rlibc;
@@ -24,21 +20,11 @@ pub extern "win64" fn efi_main(hdl: uefi::Handle, sys: uefi::SystemTable) -> uef
 
     let (memory_map, memory_map_size, map_key, descriptor_size, descriptor_version) = uefi::lib_memory_map();
 
-    let gop = match uefi::graphics::GraphicsOutputProtocol::new() {
-        Ok(r) => r,
-        Err(_) => panic!(),
-    };
-
-    for _ in 0..gop.get_max_mode() {
-        uefi::get_system_table().console().write("Ya!\n\r");
-    }
+    let gop = uefi::graphics::GraphicsOutputProtocol::new().unwrap();
 
     let mut mode: u32 = 0;
     for i in 0..gop.get_max_mode() {
-        let info = match gop.query_mode(i) {
-            Ok(r) => r,
-            Err(r) => return r,
-        };
+        let info = gop.query_mode(i).unwrap();
 
         if info.pixel_format != uefi::graphics::PixelFormat::RedGreenBlue
             && info.pixel_format != uefi::graphics::PixelFormat::BlueGreenRed { continue; }
@@ -48,9 +34,7 @@ pub extern "win64" fn efi_main(hdl: uefi::Handle, sys: uefi::SystemTable) -> uef
     };
 
     gop.set_mode(mode);
-    gop.draw(&[uefi::graphics::Pixel::new(255, 0, 0) ; 300], 0, 300, 0, 0);
-
-    //rs.reset_system(uefi::ResetType::Shutdown, uefi::Status::Success);
+    gop.draw(&[uefi::graphics::Pixel::new(255, 0, 0) ; 90000], 300, 300, 300, 300);
 
     bs.exit_boot_services(&hdl, &map_key);
     rs.set_virtual_address_map(&memory_map_size, &descriptor_size, &descriptor_version, memory_map);
