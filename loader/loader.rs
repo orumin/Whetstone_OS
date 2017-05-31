@@ -15,9 +15,7 @@ use uefi::SimpleTextOutput;
 #[allow(unreachable_code)]
 #[no_mangle]
 pub extern "win64" fn efi_main(hdl: uefi::Handle, sys: uefi::SystemTable) -> uefi::Status {
-//    FIXME: handle_protocol() ( called by initialize_lib() ) is always hang up now
-//    uefi::initialize_lib(&hdl, &sys);
-    uefi::set_system_table(&sys);
+    uefi::initialize_lib(&hdl, &sys);
 
     let bs = uefi::get_system_table().boot_services();
     let rs = uefi::get_system_table().runtime_services();
@@ -26,10 +24,36 @@ pub extern "win64" fn efi_main(hdl: uefi::Handle, sys: uefi::SystemTable) -> uef
 
     let (memory_map, memory_map_size, map_key, descriptor_size, descriptor_version) = uefi::lib_memory_map();
 
+    let gop = match uefi::graphics::GraphicsOutputProtocol::new() {
+        Ok(r) => r,
+        Err(_) => panic!(),
+    };
+
+    for _ in 0..gop.get_max_mode() {
+        uefi::get_system_table().console().write("Ya!\n\r");
+    }
+
+    let mut mode: u32 = 0;
+    for i in 0..gop.get_max_mode() {
+        let info = match gop.query_mode(i) {
+            Ok(r) => r,
+            Err(r) => return r,
+        };
+
+        if info.pixel_format != uefi::graphics::PixelFormat::RedGreenBlue
+            && info.pixel_format != uefi::graphics::PixelFormat::BlueGreenRed { continue; }
+        if info.horizontal_resolution > 1920 && info.vertical_resolution > 1080 { continue; }
+        if info.horizontal_resolution == 1920 && info.vertical_resolution == 1080 { mode = i; break; }
+        mode = i;
+    };
+
+    gop.set_mode(mode);
+    gop.draw(&[uefi::graphics::Pixel::new(255, 0, 0) ; 300], 0, 300, 0, 0);
+
+    //rs.reset_system(uefi::ResetType::Shutdown, uefi::Status::Success);
+
     bs.exit_boot_services(&hdl, &map_key);
     rs.set_virtual_address_map(&memory_map_size, &descriptor_size, &descriptor_version, memory_map);
-
-    rs.reset_system(uefi::ResetType::Shutdown, uefi::Status::Success);
 
     loop {
     }
