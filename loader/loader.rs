@@ -71,3 +71,10 @@ pub extern fn rust_begin_panic(_msg: core::fmt::Arguments,
                                _line: u32) -> ! {
     loop {}
 }
+
+#[no_mangle]
+pub extern "C" fn __udivti3() {}
+#[no_mangle]
+pub extern "C" fn __umodti3() {}
+#[no_mangle]
+pub extern "C" fn __muloti4() {}
