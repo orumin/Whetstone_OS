@@ -8,7 +8,7 @@ LOADER		= loader/target/$(TARGET)/debug/libuefi_loader.a
 KERNEL_OBJ	= target/$(TARGET)/debug/libwhetstone.a
 
 FORMAT		= efi-app-$(ARCH)
-LDFLAGS		= --oformat pei-x86-64 --subsystem 10 -pie -e efi_main
+LDFLAGS		= --gc-sections --oformat pei-x86-64 --subsystem 10 -pie -e efi_main
 
 prefix		= x86_64-efi-pe-
 CC			= gcc
