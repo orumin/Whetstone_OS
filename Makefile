@@ -1,64 +1,55 @@
 ARCH		= x86_64
 TARGET		= $(ARCH)-unknown-whetstone
+UEFI_TARGET = $(ARCH)-uefi
 BUILD_ROOT	= build
+ESP_DIR		= $(BUILD_ROOT)/esp
+DEST_DIR    = $(ESP_DIR)/efi/boot
+TARGET_DIR  = $(BUILD_ROOT)/run
 KERNEL		= bootx64.efi
-HD_IMG		= boot.img
 
-LOADER		= loader/target/$(TARGET)/debug/libuefi_loader.a
+LOADER		= loader/target/$(UEFI_TARGET)/debug/uefi_loader.efi
 KERNEL_OBJ	= target/$(TARGET)/debug/libwhetstone.a
 
-FORMAT		= efi-app-$(ARCH)
-LDFLAGS		= --gc-sections --oformat pei-x86-64 --subsystem 10 -pie -e efi_main
-
-prefix		= x86_64-efi-pe-
-CC			= gcc
-CXX			= g++
-#CC			= $(prefix)gcc
-#CXX			= $(prefix)g++
-LD			= $(prefix)ld
-AS			= $(prefix)as
-AR			= $(prefix)ar
-OBJCOPY		= $(prefix)objcopy
-MFORMAT		= mformat
-MMD			= mmd
-MCOPY		= mcopy
 RUSTC		= rustc
-CARGO		= xargo
+CARGO		= cargo
 
-LOADER_SRC	= $(wildcard loader/*.rs)
-LIBUEFI_SRC = $(wildcard external/uefi/src/*.rs)
+OVMF_CODE   = OVMF_CODE.fd
+OVMF_VARS   = OVMF_VARS.fd
 
-BUILD_TARGET = $(BUILD_ROOT)/$(KERNEL)
+QEMU		= qemu-system-x86_64
+BOOT_OPTS	= -nodefaults -vga std -machine q35,accel=kvm:tcg -m 1024 \
+				-drive if=pflash,format=raw,file=$(OVMF_CODE),readonly=on \
+				-drive if=pflash,format=raw,file=$(OVMF_VARS),readonly=on \
+				-drive format=raw,file=fat:rw:$(ESP_DIR) \
+				-drive format=raw,file=fat:rw:$(TARGET_DIR)
+
+# for OVMF debug
+# -debugcon file:debug.log -global isa-debugcon.iobase=0x402
+
+LOADER_SRC	= $(wildcard loader/src/*.rs)
+
+BUILD_TARGET = $(DEST_DIR)/$(KERNEL)
 
 .PHONY: all clean iso cargo
 
 all: $(BUILD_TARGET)
 
-$(LOADER): $(LOADER_SRC) $(LIBUEFI_SRC)
-	$(CARGO) build --manifest-path=loader/Cargo.toml --target $(TARGET)
-	cd loader/target/$(TARGET)/debug && $(AR) x libuefi_loader.a
+$(LOADER): $(LOADER_SRC)
+	cd loader && \
+	RUST_TARGET_PATH=`pwd` $(CARGO) xbuild --target $(UEFI_TARGET)
 
 $(BUILD_TARGET): $(LOADER)
-	@mkdir -p $(BUILD_ROOT)
-	$(LD) $(LDFLAGS) -o $@ $(dir $(LOADER))*.o
+	@mkdir -p $(DEST_DIR)
+	@mkdir -p $(TARGET_DIR)
+	cp $< $@
 
 $(KERNEL_OBJ): $(LOADER)
 #	RUSTFLAGS='-L $(LIBUEFI_DIR) -L $(LIBCORE_DIR)' $(CARGO) build --target $(TARGET)
 
-img: $(BUILD_ROOT)/$(HD_IMG)
-
-$(BUILD_ROOT)/$(HD_IMG): $(BUILD_ROOT)/$(KERNEL)
-	@dd if=/dev/zero of=fat.img bs=1k count=1440
-	@$(MFORMAT) -i fat.img -f 1440 ::
-	@$(MMD) -i fat.img ::/EFI
-	@$(MMD) -i fat.img ::/EFI/BOOT
-	@$(MCOPY) -i fat.img $(BUILD_ROOT)/$(KERNEL) ::/EFI/BOOT
-	@mv fat.img $(BUILD_ROOT)/$(HD_IMG)
-
-run: img
-	qemu-system-x86_64 -enable-kvm -net none -m 1024 -bios ovmf.fd -usb -usbdevice disk::$(BUILD_ROOT)/$(HD_IMG)
+run: $(BUILD_TARGET)
+	$(QEMU) $(BOOT_OPTS)
 
 clean:
 	@cd loader && $(CARGO) clean && rm -rf target
 	@$(CARGO) clean
-	@rm -rf build fat.img
+	@rm -rf build

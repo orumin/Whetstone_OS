@@ -1,23 +1,13 @@
+cargo-features = ["edition"]
+
 [package]
 name = "uefi_loader"
 version = "0.1.0"
 authors = ["orumin <dev@orum.in>"]
 
-[lib]
-path = "loader.rs"
-crate-type = ["staticlib"]
-
 [dependencies]
-rlibc = "1.0"
+uefi = { path = "../external/uefi-rs/" }
+uefi-services = { path = "../external/uefi-rs/uefi-services" }
+uefi-exts = { path = "../external/uefi-rs/uefi-exts" }
 
-[dependencies.uefi]
-path = "../external/uefi"
-
-[dependencies.compiler_builtins]
-git = "https://github.com/rust-lang-nursery/compiler-builtins"
-
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-panic = "abort"
+log = { version = "0.4", default-features = false }
